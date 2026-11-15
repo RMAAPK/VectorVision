@@ -1,0 +1,5 @@
+build/
+.research_cache/
+*.svgc
+*.svgv
+*.csv

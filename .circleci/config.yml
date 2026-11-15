@@ -1,0 +1,33 @@
+version: 2.1
+jobs:
+  verify:
+    docker:
+      - image: ubuntu:24.04
+    steps:
+      - checkout
+      - run:
+          name: Install C++20 and codec dependencies
+          command: |
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential cmake zlib1g-dev libpng-dev libjpeg-dev
+      - run:
+          name: Configure Release build
+          command: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE='-O3 -DNDEBUG'
+      - run:
+          name: Compile
+          command: cmake --build build --parallel 2
+      - run:
+          name: Round-trip and corruption tests
+          command: ctest --test-dir build --output-on-failure
+      - run:
+          name: Synthetic rate-distortion benchmark
+          command: ./build/svgv_bench --csv build/benchmark.csv
+      - run:
+          name: Experimental residual benchmark (not part of format)
+          command: ./build/svgv_bench --experimental-residual --csv build/benchmark-residual.csv
+      - store_artifacts:
+          path: build
+workflows:
+  vectorvision-v1:
+    jobs:
+      - verify
